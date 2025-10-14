@@ -1,20 +1,26 @@
 use serde_json;
 use std::env;
-
-// Available if you need it!
-// use serde_bencode
+use serde_bencode;
 
 #[allow(dead_code)]
-fn decode_bencoded_value(encoded_value: &str) -> serde_json::Value {
+fn decode_bencoded_value(encoded_value: &str) {
     // If encoded_value starts with a digit, it's a number
-    if encoded_value.chars().next().unwrap().is_digit(10) {
-        // Example: "5:hello" -> "hello"
-        let colon_index = encoded_value.find(':').unwrap();
-        let number_string = &encoded_value[..colon_index];
-        let number = number_string.parse::<usize>().unwrap();
-        let string = &encoded_value[colon_index + 1..colon_index + 1 + number];
-        return serde_json::Value::String(string.to_string());
-    } else {
+    let first_no = encoded_value.as_bytes()[0];
+     if first_no=='i' as u8{
+        let decoded_value: i64 = serde_bencode::from_bytes(encoded_value.as_bytes()).unwrap();
+        println!("{}", decoded_value);
+     } else if first_no=='l' as u8 {
+        let decoded_value: Vec<String> = serde_bencode::from_bytes(encoded_value.as_bytes()).unwrap();
+        println!("{:?}", decoded_value);
+     } else if first_no=='d' as u8 {
+        let decoded_value: std::collections::HashMap<String, String> = serde_bencode::from_bytes(encoded_value.as_bytes()).unwrap();
+        println!("{:?}", decoded_value);
+          
+     } 
+     else if first_no.is_ascii_digit() {
+        let decoded_value: String = serde_bencode::from_bytes(encoded_value.as_bytes()).unwrap();
+        println!("\"{}\"", decoded_value);
+     }else {
         panic!("Unhandled encoded value: {}", encoded_value)
     }
 }
@@ -30,9 +36,13 @@ fn main() {
 
         // Uncomment this block to pass the first stage
         let encoded_value = &args[2];
-        let decoded_value = decode_bencoded_value(encoded_value);
-        println!("{}", decoded_value.to_string());
+    
+        decode_bencoded_value(encoded_value);
+        // let decoded_value = serde_bencode::from_str::<serde_json::Value>(&encoded_value.to_string()).unwrap();
+    
+
+        // println!("{}", decoded_value.to_string());
     } else {
         println!("unknown command: {}", args[1])
     }
-}
+} 
