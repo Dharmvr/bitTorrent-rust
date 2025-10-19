@@ -89,6 +89,15 @@ fn main() {
             print!("{:02x}", byte);
         }
         println!();
+        println!("Piece Length: {}", new_result.info.piece_length);
+        println!("Piece Hashes:");
+        let pieces = &new_result.info.pieces;
+        for chunk in pieces.chunks(20) {
+            for byte in chunk {
+                print!("{:02x}", byte);
+            }
+            println!();
+        }
     } else {
         println!("unknown command: {}", args[1]);
     }
