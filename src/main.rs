@@ -1,6 +1,7 @@
 use serde_bencode;
 use serde_bytes::ByteBuf;
 use serde_json;
+use sha1::Digest;
 use std::env;
 
 #[allow(dead_code)]
@@ -42,7 +43,7 @@ struct MetaInfo {
     info: InfoDict,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, serde::Serialize)]
 struct InfoDict {
     pieces: ByteBuf, // <- binary SHA1 hashes
     name: String,
@@ -82,6 +83,12 @@ fn main() {
         println!("Tracker URL: {}", new_result.announce);
 
         println!("Length: {}", new_result.info.length);
+        let info_hash = sha1::Sha1::digest(&serde_bencode::to_bytes(&new_result.info).unwrap());
+        print!("Info Hash: ");
+        for byte in info_hash.iter() {
+            print!("{:02x}", byte);
+        }
+        println!();
     } else {
         println!("unknown command: {}", args[1]);
     }
