@@ -3,27 +3,40 @@ use std::env;
 use serde_bencode;
 
 #[allow(dead_code)]
-fn decode_bencoded_value(encoded_value: &str) {
-    // If encoded_value starts with a digit, it's a number
-    let first_no = encoded_value.as_bytes()[0];
-     if first_no=='i' as u8{
-        let decoded_value: i64 = serde_bencode::from_bytes(encoded_value.as_bytes()).unwrap();
-        println!("{}", decoded_value);
-     } else if first_no=='l' as u8 {
-        let decoded_value: Vec<String> = serde_bencode::from_bytes(encoded_value.as_bytes()).unwrap();
-        println!("{:?}", decoded_value);
-     } else if first_no=='d' as u8 {
-        let decoded_value: std::collections::HashMap<String, String> = serde_bencode::from_bytes(encoded_value.as_bytes()).unwrap();
-        println!("{:?}", decoded_value);
-          
-     } 
-     else if first_no.is_ascii_digit() {
-        let decoded_value: String = serde_bencode::from_bytes(encoded_value.as_bytes()).unwrap();
-        println!("\"{}\"", decoded_value);
-     }else {
-        panic!("Unhandled encoded value: {}", encoded_value)
+fn decode_bencoded_value(encode:&str) {
+    let decode : serde_bencode::value::Value = serde_bencode::from_str(encode).unwrap();
+    // println!("{:?}", decode);
+    let json_value = convert(decode);
+    // println!("{:?}", json_value);
+    let json_string = serde_json::to_value(&json_value).unwrap();
+    println!("{}", json_string);
+
+
+}
+fn convert(el: serde_bencode::value::Value) -> serde_json::value::Value {
+    match el {
+        serde_bencode::value::Value::Bytes(bytes) => {
+            serde_json::value::Value::String(String::from_utf8_lossy(&bytes).into_owned())
+        },
+        serde_bencode::value::Value::List(list) => {
+            let json_list: Vec<serde_json::value::Value> = list.into_iter().map(convert).collect();
+            serde_json::value::Value::Array(json_list)
+        },
+        serde_bencode::value::Value::Int(i) => {
+            serde_json::value::Value::Number(serde_json::Number::from(i))
+        },
+        serde_bencode::value::Value::Dict(map) => {
+            let mut json_map = serde_json::Map::new();
+            for (key, value) in map {
+                let key_str = String::from_utf8_lossy(&key).into_owned();
+                json_map.insert(key_str, convert(value));
+            }
+            serde_json::value::Value::Object(json_map)
+        },
+        _ => serde_json::value::Value::Null,
     }
 }
+
 
 // Usage: your_program.sh decode "<encoded_value>"
 fn main() {
@@ -41,8 +54,8 @@ fn main() {
         // let decoded_value = serde_bencode::from_str::<serde_json::Value>(&encoded_value.to_string()).unwrap();
     
 
-        // println!("{}", decoded_value.to_string());
+     
     } else {
         println!("unknown command: {}", args[1])
     }
-} 
+}
